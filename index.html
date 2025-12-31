@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NHCI Prompt Governance</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 0;
+      color: #0f172a;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #0f4d3a;
+    }
+
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: 600;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 15px;
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    button {
+      margin-top: 24px;
+      background: #0f4d3a;
+      color: #fff;
+      border: none;
+      padding: 14px 22px;
+      font-size: 16px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .result {
+      margin-top: 32px;
+      padding: 20px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .bad {
+      background: #fee2e2;
+      color: #7f1d1d;
+    }
+
+    .score {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    ul {
+      padding-left: 18px;
+    }
+
+    pre {
+      background: #0f172a;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Prompt Governance Checker</h1>
+
+    <label>Domain</label>
+    <input id="domain" placeholder="e.g. FinTech, Healthcare, AI Governance" />
+
+    <label>User Prompt</label>
+    <textarea id="prompt" placeholder="Paste your prompt here..."></textarea>
+
+    <button id="checkBtn" onclick="checkPrompt()">Check Prompt</button>
+
+    <div id="output" class="result" style="display:none;"></div>
+  </div>
+
+  <script>
+    async function checkPrompt() {
+      const domain = document.getElementById("domain").value.trim();
+      const prompt = document.getElementById("prompt").value.trim();
+      const output = document.getElementById("output");
+      const btn = document.getElementById("checkBtn");
+
+      if (!domain || !prompt) {
+        alert("Domain and Prompt are required.");
+        return;
+      }
+
+      btn.disabled = true;
+      output.style.display = "block";
+      output.innerHTML = "Checking...";
+
+      try {
+        const res = await fetch(
+          "https://nhci.app.n8n.cloud/webhook/prompt-governance",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              domain: domain,
+              user_prompt: prompt
+            })
+          }
+        );
+
+        const data = await res.json();
+
+        if (data.status === "compliant") {
+          output.innerHTML = `
+            <div class="badge ok">متوافق</div>
+            <div class="score">Score: ${data.score}/100</div>
+            <pre>${data.original_prompt}</pre>
+          `;
+        } else {
+          output.innerHTML = `
+            <div class="badge bad">غير متوافق</div>
+            <div class="score">Score: ${data.score}/100</div>
+
+            <h4>Missing Principles</h4>
+            <ul>
+              ${data.missing_principles.map(p => `<li>${p}</li>`).join("")}
+            </ul>
+
+            <h4>Explanation</h4>
+            <p>${data.explanation}</p>
+
+            <h4>Refined Prompt</h4>
+            <pre>${data.refined_prompt}</pre>
+          `;
+        }
+
+      } catch (e) {
+        output.innerHTML = "Error connecting to governance service.";
+      }
+
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>
