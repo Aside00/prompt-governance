@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NHCI PromptCheck</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root{
+      --nhc-green:#0F4D3A;
+      --nhc-green-light:#1F7A5A;
+      --nhc-green-soft:#E6F2EE;
+      --ink:#0F172A;
+      --muted:#64748B;
+      --card:#FFFFFF;
+      --line:#DCEFE6;
+      --shadow: 0 18px 45px rgba(2, 44, 33, 0.10);
+      --radius: 22px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(31,122,90,.18), transparent 60%),
+        radial-gradient(900px 500px at 15% 0%, rgba(15,77,58,.14), transparent 60%),
+        linear-gradient(135deg, var(--nhc-green-soft), #fff 55%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+    }
+
+    .layout{
+      width:100%;
+      max-width: 980px;
+      display:grid;
+      gap:18px;
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items:start;
+    }
+
+    @media (max-width: 920px){
+      .layout{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding:22px;
+    }
+
+    .header{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:14px;
+    }
+
+    .logo{
+      width:54px;
+      height:54px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .logo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      padding:6px;
+    }
+
+    h1{
+      margin:0;
+      font-size:20px;
+      letter-spacing:.2px;
+    }
+
+    .subtitle{
+      margin:4px 0 0;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: linear-gradient(135deg, rgba(31,122,90,.10), rgba(15,77,58,.06));
+      color:#0B5F43;
+      font-size:12px;
+      margin-top:8px;
+      width: fit-content;
+      font-weight:700;
+    }
+
+    label{
+      display:block;
+      font-size:13px;
+      font-weight:700;
+      color:#0B5F43;
+      margin:14px 0 8px;
+    }
+
+    textarea, select{
+      width:100%;
+      padding:14px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#FBFFFD;
+      font-size:14px;
+      outline:none;
+      transition: box-shadow .15s ease, border-color .15s ease;
+    }
+    textarea{ min-height:150px; resize:vertical; }
+
+    textarea:focus, select:focus{
+      border-color: rgba(31,122,90,.65);
+      box-shadow: 0 0 0 4px rgba(31,122,90,.15);
+    }
+
+    .actions{
+      display:flex;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .btn{
+      width:100%;
+      border:none;
+      border-radius:16px;
+      padding:14px;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition: transform .08s ease, box-shadow .12s ease, opacity .12s ease;
+    }
+
+    .btn-primary{
+      color:#fff;
+      background: linear-gradient(135deg, var(--nhc-green), var(--nhc-green-light));
+      box-shadow: 0 10px 22px rgba(15,77,58,.25);
+    }
+    .btn-primary:hover{ transform: translateY(-1px); }
+    .btn-primary:disabled{ opacity:.6; cursor:not-allowed; transform:none; }
+
+    .btn-secondary{
+      background:#F1F5F9;
+      color:#0F172A;
+      border:1px solid #E2E8F0;
+    }
+
+    .right .card{
+      position: sticky;
+      top: 18px;
+    }
+    @media (max-width:920px){
+      .right .card{ position: static; }
+    }
+
+    .status{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding:8px 10px;
+      border-radius:999px;
+      font-weight:800;
+      font-size:12px;
+      border:1px solid var(--line);
+      background:#fff;
+    }
+    .ok{ color:#0B5F43; }
+    .no{ color:#7A1F2A; background: rgba(244,63,94,.06); border-color: rgba(244,63,94,.18); }
+
+    .scoreWrap{
+      margin-top:12px;
+      display:grid;
+      gap:8px;
+    }
+    .scoreTop{
+      display:flex;
+      justify-content:space-between;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:700;
+    }
+    .bar{
+      height:10px;
+      border-radius:999px;
+      background:#EAF4EF;
+      border:1px solid var(--line);
+      overflow:hidden;
+    }
+    .bar > div{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, var(--nhc-green), var(--nhc-green-light));
+      border-radius:999px;
+      transition: width .25s ease;
+    }
+
+    .result{
+      display:none;
+      margin-top:14px;
+      padding:14px;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background: linear-gradient(135deg, rgba(31,122,90,.09), rgba(255,255,255,.9));
+    }
+
+    .chips{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+    .chip{
+      font-size:12px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(244,63,94,.20);
+      background: rgba(244,63,94,.06);
+      color:#7A1F2A;
+      font-weight:700;
+    }
+
+    .outArea{
+      display:none;
+      margin-top:12px;
+    }
+
+    .footer{
+      margin-top:14px;
+      font-size:12px;
+      color:var(--muted);
+      display:flex;
+      justify-content:space-between;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="layout">
+    <!-- LEFT -->
+    <div class="left">
+      <div class="card">
+        <div class="header">
+          <div class="logo">
+            <img src="https://files.catbox.moe/k323x4.png" alt="NHCI Logo">
+          </div>
+          <div>
+            <h1>NHCI PromptCheck</h1>
+            <p class="subtitle">
+              NHCI PromptCheck standardizes and validates prompt quality before use
+              in AI systems across NHC Innovation.
+            </p>
+            <div class="badge">Prompt Governance & Quality Check</div>
+          </div>
+        </div>
+
+        <label>Domain</label>
+        <select id="domain">
+          <option value="AI Governance">AI Governance</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Operations">Operations</option>
+        </select>
+
+        <label>Prompt</label>
+        <textarea id="prompt" placeholder="Enter your prompt here..."></textarea>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="submitBtn" onclick="validatePrompt()">Validate Prompt</button>
+          <button class="btn btn-secondary" onclick="fillExample()">Quick Example</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+      <div class="card">
+        <div class="status">
+          <div class="pill" id="statusPill">Waiting for input</div>
+          <div class="pill ok" id="scorePill">Score: —</div>
+        </div>
+
+        <div class="scoreWrap">
+          <div class="scoreTop">
+            <span>Compliance Level</span>
+            <span id="scoreText">—</span>
+          </div>
+          <div class="bar"><div id="scoreBar"></div></div>
+        </div>
+
+        <div class="result" id="resultBox">
+          <div id="message"></div>
+          <div class="chips" id="chips"></div>
+
+          <div class="outArea" id="outArea">
+            <label>Refined Prompt</label>
+            <textarea id="refinedPrompt" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="footer">
+          <span>© NHC Innovation</span>
+          <span>v1.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ✅ Your real production webhook
+    const WEBHOOK_URL = "https://nhci.app.n8n.cloud/webhook/prompt-governance";
+
+    function setStatus(text, type){
+      const pill = document.getElementById("statusPill");
+      pill.textContent = text;
+      pill.className = "pill " + (type || "");
+    }
+
+    function setScore(score){
+      const s = Number(score ?? 0);
+      document.getElementById("scorePill").textContent = `Score: ${s || 0}`;
+      document.getElementById("scoreText").textContent = `${s || 0}/100`;
+      document.getElementById("scoreBar").style.width = `${Math.max(0, Math.min(100, s || 0))}%`;
+    }
+
+    function renderMissing(list){
+      const chips = document.getElementById("chips");
+      chips.innerHTML = "";
+      (list || []).forEach(x=>{
+        const c = document.createElement("div");
+        c.className = "chip";
+        c.textContent = x;
+        chips.appendChild(c);
+      });
+    }
+
+    async function validatePrompt(){
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+
+      const prompt = document.getElementById("prompt").value.trim();
+      const domain = document.getElementById("domain").value;
+
+      const resultBox = document.getElementById("resultBox");
+      const outArea = document.getElementById("outArea");
+      const refinedEl = document.getElementById("refinedPrompt");
+      const messageEl = document.getElementById("message");
+
+      resultBox.style.display = "none";
+      outArea.style.display = "none";
+      renderMissing([]);
+
+      if(!prompt){
+        setStatus("Please enter a prompt", "no");
+        setScore(0);
+        btn.disabled = false;
+        return;
+      }
+
+      setStatus("Validating...", "");
+      setScore(0);
+
+      try{
+        const res = await fetch(WEBHOOK_URL, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ domain, user_prompt: prompt })
+
+        });
+
+        const data = await res.json();
+
+        resultBox.style.display = "block";
+        setScore(data.score);
+
+        if(data.status === "compliant"){
+          setStatus("Compliant", "ok");
+          messageEl.innerHTML = "✅ The prompt is compliant and ready for use.";
+          outArea.style.display = "none";
+          renderMissing([]);
+        } else if (data.status === "non_compliant"){
+          setStatus("Non-compliant", "no");
+          messageEl.innerHTML = "❌ The prompt is non-compliant. A refined version has been generated.";
+          renderMissing(data.missing_principles);
+          refinedEl.value = data.refined_prompt || "";
+          outArea.style.display = "block";
+        } else {
+          setStatus("Error", "no");
+          messageEl.innerHTML = "⚠️ Unexpected response from the API.";
+          outArea.style.display = "none";
+          renderMissing([]);
+        }
+      }catch(e){
+        setStatus("Connection error (CORS or network)", "no");
+        setScore(0);
+      }
+
+      btn.disabled = false;
+    }
+
+    function fillExample(){
+      document.getElementById("domain").value = "AI Governance";
+      document.getElementById("prompt").value =
+        "Write a market analysis for an AI platform in the government sector.";
+    }
+  </script>
+</body>
+</html>
